@@ -1,4 +1,5 @@
 #include "buffer.hh"
+#include <stdexcept>
 
 using namespace std;
 
