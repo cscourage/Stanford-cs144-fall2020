@@ -1,5 +1,8 @@
 #include "byte_stream.hh"
+<<<<<<< HEAD
 #include <algorithm>
+=======
+>>>>>>> origin/lab1-srartercode
 
 // Dummy implementation of a flow-controlled in-memory byte stream.
 

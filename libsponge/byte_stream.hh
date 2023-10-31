@@ -2,7 +2,10 @@
 #define SPONGE_LIBSPONGE_BYTE_STREAM_HH
 
 #include <string>
+<<<<<<< HEAD
 #include <deque>
+=======
+>>>>>>> origin/lab1-srartercode
 
 //! \brief An in-order byte stream.
 

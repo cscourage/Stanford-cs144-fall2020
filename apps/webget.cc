@@ -15,7 +15,7 @@ void get_URL(const string &host, const string &path) {
 
     // Then you'll need to print out everything the server sends back,
     // (not just one call to read() -- everything) until you reach
-    // the "eof" (end of file).void get_URL(const string &host, const string &path) {
+    // the "eof" (end of file).
         
     TCPSocket socket1;
     socket1.connect(Address(host, "http"));
