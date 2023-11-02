@@ -31,6 +31,8 @@ class StreamReassembler {
     size_t _remaining_assemble_capacity;
     bool _eof;
 
+    void merge();
+
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
