@@ -31,6 +31,7 @@ class StreamReassembler {
     bool _eof;
 
     void merge();
+    void overlap_handle(const node& elem);
 
 
   public:
