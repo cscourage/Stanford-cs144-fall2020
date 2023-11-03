@@ -8,15 +8,14 @@
 // You will need to add private members to the class declaration in `stream_reassembler.hh`
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
-StreamReassembler::StreamReassembler(const size_t capacity) : _output(capacity), _capacity(capacity), 
-    _unreassemble({}), _unreassemble_bytes(0), _recvBase(0), _eof(false) {}
+StreamReassembler::StreamReassembler(const size_t capacity)
+    : _output(capacity), _capacity(capacity), _unreassemble({}), _unreassemble_bytes(0), _recvBase(0), _eof(false) {}
 
-
-// After the receving segment is directly write into the buffer, you must also check the 
+// After the receving segment is directly write into the buffer, you must also check the
 // _unreassemble whether now they can also push into the buffer. And if so, do it!
 void StreamReassembler::merge() {
     while (!_unreassemble.empty()) {
@@ -39,10 +38,9 @@ void StreamReassembler::merge() {
     }
 }
 
-
 // In the situation where the receving segment is inserted into the _unreassemble,
 // you should check and handle the overlap and containment situation.
-void StreamReassembler::overlap_handle(const node& elem) {
+void StreamReassembler::overlap_handle(const node &elem) {
     auto iter = _unreassemble.find(elem);
     // if there exist a similar index datagram.
     if (iter != _unreassemble.end()) {
@@ -108,7 +106,6 @@ void StreamReassembler::overlap_handle(const node& elem) {
         }
     }
 }
-
 
 //! \details This function accepts a substring (aka a segment) of bytes,
 //! possibly out-of-order, from the logical stream, and assembles any newly

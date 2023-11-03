@@ -3,12 +3,12 @@
 #include "util.hh"
 
 #include <arpa/inet.h>
+#include <array>
 #include <cstring>
 #include <memory>
 #include <netdb.h>
 #include <stdexcept>
 #include <system_error>
-#include <array>
 
 using namespace std;
 

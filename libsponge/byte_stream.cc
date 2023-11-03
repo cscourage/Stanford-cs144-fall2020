@@ -1,4 +1,5 @@
 #include "byte_stream.hh"
+
 #include <algorithm>
 
 // Dummy implementation of a flow-controlled in-memory byte stream.
@@ -9,12 +10,12 @@
 // You will need to add private members to the class declaration in `byte_stream.hh`
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
-ByteStream::ByteStream(const size_t capa) :
-    buffer(), capacity(capa), end_write(false), written_bytes(0), read_bytes(0) {}
+ByteStream::ByteStream(const size_t capa)
+    : buffer(), capacity(capa), end_write(false), written_bytes(0), read_bytes(0) {}
 
 size_t ByteStream::write(const string &data) {
     size_t real_write = std::min(remaining_capacity(), data.size());

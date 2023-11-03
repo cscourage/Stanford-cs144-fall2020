@@ -4,8 +4,8 @@
 #include "byte_stream.hh"
 
 #include <cstdint>
-#include <string>
 #include <set>
+#include <string>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
@@ -13,13 +13,11 @@ class StreamReassembler {
   private:
     // Your code here -- add private members as necessary.
     struct node {
-      size_t begin;
-      size_t length;
-      std::string data;
-      bool eof;
-      bool operator<(const node& rhs) const {
-        return begin < rhs.begin;
-      }
+        size_t begin;
+        size_t length;
+        std::string data;
+        bool eof;
+        bool operator<(const node &rhs) const { return begin < rhs.begin; }
     };
 
     ByteStream _output;  //!< The reassembled in-order byte stream
@@ -31,8 +29,7 @@ class StreamReassembler {
     bool _eof;
 
     void merge();
-    void overlap_handle(const node& elem);
-
+    void overlap_handle(const node &elem);
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
