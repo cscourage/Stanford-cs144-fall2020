@@ -13,7 +13,7 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 using namespace std;
 
 StreamReassembler::StreamReassembler(const size_t capacity) : _output(capacity), _capacity(capacity), 
-    _unreassemble({}), _unreassemble_bytes(0), _recvBase(0), _remaining_assemble_capacity(capacity), _eof(false) {}
+    _unreassemble({}), _unreassemble_bytes(0), _recvBase(0), _eof(false) {}
 
 
 void StreamReassembler::merge() {
@@ -38,48 +38,116 @@ void StreamReassembler::merge() {
 }
 
 
-// void discard() {
-//     // if overflow you should take actions.
-//     if (_output.buffer_size() + _unreassemble_bytes > _capacity) {
-
-//     }
-// }
-
-
 //! \details This function accepts a substring (aka a segment) of bytes,
 //! possibly out-of-order, from the logical stream, and assembles any newly
 //! contiguous substrings and writes them into the output stream in order.
 void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
     size_t len;
     std::string real_data;
+    // the datagram is the expected one.
     if (index == _recvBase) {
         len = std::min(data.size(), _output.remaining_capacity());
         real_data = data.substr(0, len);
         _output.write(real_data);
         _recvBase += len;
         _eof = eof;
+        // if cut off so it must not be the last one.
+        if (len < data.size()) {
+            _eof = false;
+        }
         merge();
-        //discard();
-        _remaining_assemble_capacity = _capacity - _output.buffer_size() - _unreassemble_bytes;
     } else if (index < _recvBase) {
+        // the datagram range from less then expected to larger than expected.
         if (index + data.size() > _recvBase) {
             len = std::min(index + data.size() - _recvBase, _output.remaining_capacity());
             real_data = data.substr(_recvBase - index, len);
             _output.write(real_data);
             _recvBase += len;
             _eof = eof;
+            // if cut off so it must not be the last one.
+            if (len < index + data.size() - _recvBase) {
+                _eof = false;
+            }
             merge();
-            //discard();
-            _remaining_assemble_capacity = _capacity - _output.buffer_size() - _unreassemble_bytes;
         }
     } else {
-        // notice it need to handle the overlap situation.
-        len = std::min(data.size(), _remaining_assemble_capacity);
-        real_data = data.substr(0, len);
-        _unreassemble.insert({index, len, real_data, eof});
-        // need begin to deal with overlap.
-        _unreassemble_bytes += data.size();
-        _remaining_assemble_capacity = _capacity - _output.buffer_size() - _unreassemble_bytes;
+        // the sliding window's endpoint.
+        size_t endpoint = _recvBase + (_capacity - _output.buffer_size());
+        // if datagram has portion in the sliding window.
+        if (index < endpoint) {
+            bool eof_tag = eof;
+            len = index + data.size() <= endpoint ? data.size() : endpoint - index;
+            // if cut off so it must not be the last one.
+            if (len != data.size()) {
+                eof_tag = false;
+            }
+            real_data = data.substr(0, len);
+            node elem{index, len, real_data, eof_tag};
+            auto iter = _unreassemble.find(elem);
+            // if there exist a similar index datagram.
+            if (iter != _unreassemble.end()) {
+                // if the receving one contains the existed one, that erase it and insert the receving one.
+                if (len > iter->length) {
+                    _unreassemble_bytes -= iter->length;
+                    _unreassemble.erase(iter);
+                    _unreassemble.insert(elem);
+                    _unreassemble_bytes += elem.length;
+                }
+            } else {
+                // if not, just insert it.
+                _unreassemble.insert(elem);
+                _unreassemble_bytes += len;
+            }
+            // handle all the overlap situation.
+            iter = _unreassemble.find(elem);
+            // if it has the previous.
+            if (iter != _unreassemble.begin()) {
+                --iter;
+                auto prev = iter;
+                ++iter;
+                if (prev->begin + prev->length > iter->begin) {
+                    // if the previous one intersects with but not contain the receving one.
+                    if (prev->begin + prev->length < iter->begin + iter->length) {
+                        size_t overlap = prev->begin + prev->length - iter->begin;
+                        node tmp{};
+                        tmp.begin = prev->begin;
+                        tmp.length = prev->length - overlap;
+                        tmp.data = (prev->data).substr(0, tmp.length);
+                        _unreassemble.erase(prev);
+                        _unreassemble.insert(tmp);
+                        _unreassemble_bytes -= overlap;
+                    } else {
+                        // if the previous one contains the receving one.
+                        _unreassemble_bytes -= iter->length;
+                        _unreassemble.erase(iter);
+                        iter = prev;
+                    }
+                }
+            }
+            // if it has the next.
+            if (iter != --_unreassemble.end()) {
+                ++iter;
+                auto next = iter;
+                --iter;
+                if (iter->begin + iter->length > next->begin) {
+                    // if the receving one intersects with but not contain the next one.
+                    if (iter->begin + iter->length < next->begin + next->length) {
+                        node tmp{};
+                        size_t overlap = iter->begin + iter->length - next->begin;
+                        tmp.begin = next->begin + overlap;
+                        tmp.length = next->length - overlap;
+                        tmp.data = (next->data).substr(overlap);
+                        _unreassemble.erase(next);
+                        _unreassemble.insert(tmp);
+                        _unreassemble_bytes -= overlap;
+                    } else {
+                        // if the receving one contains the last one.
+                        _unreassemble_bytes -= next->length;
+                        _unreassemble.erase(next);
+                    }
+                }
+            }
+        }
     }
     if (_eof) {
         _output.end_input();

@@ -28,7 +28,6 @@ class StreamReassembler {
     std::set<node> _unreassemble;
     size_t _unreassemble_bytes;
     size_t _recvBase;
-    size_t _remaining_assemble_capacity;
     bool _eof;
 
     void merge();
