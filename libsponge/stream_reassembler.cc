@@ -42,7 +42,7 @@ void StreamReassembler::merge() {
 // you should check and handle the overlap and containment situation.
 void StreamReassembler::overlap_handle(const node &elem) {
     auto iter = _unreassemble.find(elem);
-    // if there exist a similar index datagram.
+    // if there exist a similar index segment.
     if (iter != _unreassemble.end()) {
         // if the receving one contains the existed one, that erase it and insert the receving one.
         if (elem.length > iter->length) {
@@ -113,7 +113,7 @@ void StreamReassembler::overlap_handle(const node &elem) {
 void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
     size_t len;
     std::string real_data;
-    // the datagram is the expected one.
+    // the segment is the expected one.
     if (index == _recvBase) {
         len = std::min(data.size(), _output.remaining_capacity());
         real_data = data.substr(0, len);
@@ -126,7 +126,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
         }
         merge();
     } else if (index < _recvBase) {
-        // the datagram range from less then expected to larger than expected.
+        // the segment range from less then expected to larger than expected.
         if (index + data.size() > _recvBase) {
             len = std::min(index + data.size() - _recvBase, _output.remaining_capacity());
             real_data = data.substr(_recvBase - index, len);
@@ -142,7 +142,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     } else {
         // the sliding window's endpoint.
         size_t endpoint = _recvBase + (_capacity - _output.buffer_size());
-        // if datagram has portion in the sliding window.
+        // if segment has portion in the sliding window.
         if (index < endpoint) {
             bool eof_tag = eof;
             len = index + data.size() <= endpoint ? data.size() : endpoint - index;
