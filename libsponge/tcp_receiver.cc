@@ -6,12 +6,12 @@
 // automated checks run by `make check_lab2`.
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
 void TCPReceiver::segment_received(const TCPSegment &seg) {
-    const auto& header = seg.header();
+    const auto &header = seg.header();
     // if the syn has not been set.
     if (!_isn.has_value()) {
         // if the inbound segment is also not SYN.
@@ -27,7 +27,7 @@ void TCPReceiver::segment_received(const TCPSegment &seg) {
     _reassembler.push_substring(seg.payload().copy(), stream_index, header.fin);
 }
 
-optional<WrappingInt32> TCPReceiver::ackno() const { 
+optional<WrappingInt32> TCPReceiver::ackno() const {
     if (!_isn.has_value()) {
         return std::nullopt;
     }
@@ -35,4 +35,4 @@ optional<WrappingInt32> TCPReceiver::ackno() const {
     return wrap(abs_seqno, _isn.value());
 }
 
-size_t TCPReceiver::window_size() const { return _capacity -  _reassembler.stream_out().buffer_size(); }
+size_t TCPReceiver::window_size() const { return _capacity - _reassembler.stream_out().buffer_size(); }

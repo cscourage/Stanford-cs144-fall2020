@@ -6,7 +6,7 @@
 // automated checks run by `make check_lab2`.
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
@@ -14,7 +14,7 @@ using namespace std;
 //! \param n The input absolute 64-bit sequence number
 //! \param isn The initial sequence number
 WrappingInt32 wrap(uint64_t n, WrappingInt32 isn) {
-    // Take advantage of the unsigned truncation and overflow property. 
+    // Take advantage of the unsigned truncation and overflow property.
     return WrappingInt32(static_cast<uint32_t>(n) + isn.raw_value());
 }
 
