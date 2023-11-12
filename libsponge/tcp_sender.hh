@@ -9,6 +9,28 @@
 #include <functional>
 #include <queue>
 
+//! \brief The timer class of a TCPSender.
+class Timer {
+private:
+    uint16_t _time;
+    uint16_t _time_out;
+    bool _running;
+public:
+    Timer(const uint16_t time_out) : _time(0), _time_out(time_out), _running(false) {}
+    void set_time_out(const uint16_t time_out) { _time_out = time_out; }
+    void tick(const size_t ms_since_last_tick) {
+      if (_running) {
+        _time += ms_since_last_tick;
+      }
+    }
+    uint16_t get_time_out() { return _time_out; }
+    bool is_running() const { return _running; }
+    bool is_time_out() const { return _running && _time >= _time_out; }
+    void restart() { _time = 0, _running = true; }
+    void stop() { _running = false; }
+};
+
+
 //! \brief The "sender" part of a TCP implementation.
 
 //! Accepts a ByteStream, divides it up into segments and sends the
@@ -31,6 +53,29 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    //! Timer 
+    Timer _timer;
+
+    //! outstanding segment.
+    //! the first is abs seqno, the second is TCPSegment.
+    std::queue<std::pair<uint64_t, TCPSegment>> _outstanding;
+
+    //! The abs seqno of sendBase.
+    uint64_t _abs_sendBase;
+
+    //! the window size.
+    uint16_t _window_size;
+    
+    //! the outstanding segments' bytes.
+    uint64_t _bytes_in_flight;
+
+    //! the consecutive_retransmissions times of a row.
+    unsigned _consecutive_retransmissions;
+
+    //! if have sent syn or fin packet.
+    bool _syn_tag;
+    bool _fin_tag;
 
   public:
     //! Initialize a TCPSender
