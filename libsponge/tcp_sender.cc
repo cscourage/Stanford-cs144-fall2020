@@ -72,7 +72,8 @@ void TCPSender::fill_window() {
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
     uint64_t abs_ackno = unwrap(ackno, _isn, _abs_sendBase);
     // if the ackno is not the the [_abs_sendBase+1, next_seqno_absolute()+1], do not accept.
-    if (abs_ackno > next_seqno_absolute() || abs_ackno <= _abs_sendBase) {
+    // notice if abs_ackno is _abs_sendBase then it is useful because it may change the window size and fill more.
+    if (abs_ackno > next_seqno_absolute() || abs_ackno < _abs_sendBase) {
         return;
     }
     // otherwise the ackno is in the expected range.
