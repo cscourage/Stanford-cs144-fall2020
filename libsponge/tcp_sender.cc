@@ -29,7 +29,9 @@ void TCPSender::fill_window() {
     // if the window_size is 0, we should take it as 1.
     uint16_t window_size = _window_size > 0 ? _window_size : 1;
     // as long as there are new bytes to be read and space available in the window.
-    while (_bytes_in_flight < window_size && !_stream.buffer_empty()) {
+    // notice we test whether if there are new bytes to be read in the while block 
+    // because the SYN special case where there is no bytes.
+    while (_bytes_in_flight < window_size) {
         TCPSegment seg;
         // generalize the step.
         // in the beginning, the window size is just 1 and you just send SYN without payload.
@@ -46,6 +48,13 @@ void TCPSender::fill_window() {
             _fin_tag = true;
         }
         auto length = seg.length_in_sequence_space();
+
+        // if length == 0, then break it, notice you should add it otherwise it may loop forever.
+        // because this means there is no bytes to be read.
+        if (length == 0) {
+            break;
+        }
+
         seg.header().seqno = next_seqno();
         _segments_out.push(seg);
         // if timer has not been started.
@@ -55,7 +64,6 @@ void TCPSender::fill_window() {
         _outstanding.emplace(_next_seqno, std::move(seg));
         _next_seqno += length;
         _bytes_in_flight += length;
-        _abs_sendBase += length;
     }
 }
 
