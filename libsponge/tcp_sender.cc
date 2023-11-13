@@ -10,7 +10,7 @@
 // automated checks run by `make check_lab3`.
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
@@ -20,8 +20,15 @@ using namespace std;
 TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const std::optional<WrappingInt32> fixed_isn)
     : _isn(fixed_isn.value_or(WrappingInt32{random_device()()}))
     , _initial_retransmission_timeout{retx_timeout}
-    , _stream(capacity), _timer(retx_timeout), _outstanding(), _abs_sendBase(0), _window_size(1)
-    , _bytes_in_flight(0), _consecutive_retransmissions(0), _syn_tag(false), _fin_tag(false) {}
+    , _stream(capacity)
+    , _timer(retx_timeout)
+    , _outstanding()
+    , _abs_sendBase(0)
+    , _window_size(1)
+    , _bytes_in_flight(0)
+    , _consecutive_retransmissions(0)
+    , _syn_tag(false)
+    , _fin_tag(false) {}
 
 uint64_t TCPSender::bytes_in_flight() const { return _bytes_in_flight; }
 
@@ -29,7 +36,7 @@ void TCPSender::fill_window() {
     // if the window_size is 0, we should take it as 1.
     uint16_t window_size = _window_size > 0 ? _window_size : 1;
     // as long as there are new bytes to be read and space available in the window.
-    // notice we test whether if there are new bytes to be read in the while block 
+    // notice we test whether if there are new bytes to be read in the while block
     // because the SYN special case where there is no bytes.
     while (_bytes_in_flight < window_size) {
         TCPSegment seg;
@@ -106,7 +113,6 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     // update the window size and try to fill the window again.
     _window_size = window_size;
     fill_window();
-
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
