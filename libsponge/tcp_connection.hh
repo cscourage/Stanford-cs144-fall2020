@@ -21,12 +21,18 @@ class TCPConnection {
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
 
+    //! the milliseconds time has elapsed since the last segment was received.
     size_t _time_since_last_segment_received{0};
 
+    //! if the connection is active
     bool _active{false};
 
+    //! combine the syn, fin, seqno, payload produced by TCPSender and
+    //! ackno, window size produced by TCPReceiver if ackno has value.
+    //! And send it using TCPConnection._segments_out
     void _add_ack_and_window();
 
+    //! set the RST state for both sending or receiving a RST segment.
     void _set_rst(const bool rst_val);
 
   public:
