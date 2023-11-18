@@ -25,7 +25,7 @@ class TCPConnection {
     size_t _time_since_last_segment_received{0};
 
     //! if the connection is active
-    bool _active{false};
+    bool _active{true};
 
     //! combine the syn, fin, seqno, payload produced by TCPSender and
     //! ackno, window size produced by TCPReceiver if ackno has value.

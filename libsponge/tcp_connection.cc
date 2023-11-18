@@ -35,18 +35,35 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
 
     // if ACK is set, tell the TCPSender ackno and window_size.
     if (seg.header().ack) {
+        // it will automatically fill window.
         _sender.ack_received(seg.header().ackno, seg.header().win);
+    } 
+
+    // there may FSM state need to be changed.
+    // passive close then not need to linger and
+    // when sender jump into FIN_ACKED you should make _active false.
+    if (TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV && 
+        TCPState::state_summary(_sender) == TCPSenderStateSummary::SYN_ACKED) {
+        _linger_after_streams_finish = false;
+    }
+
+    if (!_linger_after_streams_finish && 
+        TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV && 
+        TCPState::state_summary(_sender) == TCPSenderStateSummary::FIN_ACKED) {
+        _active = false;
+        return;
     }
 
     // if seg occupy seqence number, send a ack segment back.
     if (seg.length_in_sequence_space() > 0) {
         _sender.fill_window();
-        _add_ack_and_window();
+        // send empty ack
+        if (_sender.segments_out().empty()) {
+            _sender.send_empty_segment();
+        }
     }
-
-    // there may FSM state need to be changed.
     
-
+    _add_ack_and_window();
 }
 
 bool TCPConnection::active() const { return _active; }
@@ -55,8 +72,7 @@ size_t TCPConnection::write(const string &data) {
     auto has_written_bytes = _sender.stream_in().write(data);
     // set the syn, seqno, fin, payload.
     _sender.fill_window();
-
-    // ask TCPReceiver for ackno and window_size.
+    // ask TCPReceiver for ackno and window_size and send it.
     _add_ack_and_window();
     return has_written_bytes;
 }
