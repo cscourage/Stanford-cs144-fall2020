@@ -9,7 +9,7 @@
 // automated checks run by `make check`.
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
@@ -37,18 +37,17 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     if (seg.header().ack) {
         // it will automatically fill window.
         _sender.ack_received(seg.header().ackno, seg.header().win);
-    } 
+    }
 
     // there may FSM state need to be changed.
     // passive close then not need to linger and
     // when sender jump into FIN_ACKED you should make _active false.
-    if (TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV && 
+    if (TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV &&
         TCPState::state_summary(_sender) == TCPSenderStateSummary::SYN_ACKED) {
         _linger_after_streams_finish = false;
     }
 
-    if (!_linger_after_streams_finish && 
-        TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV && 
+    if (!_linger_after_streams_finish && TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV &&
         TCPState::state_summary(_sender) == TCPSenderStateSummary::FIN_ACKED) {
         _active = false;
         return;
@@ -62,7 +61,7 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
             _sender.send_empty_segment();
         }
     }
-    
+
     _add_ack_and_window();
 }
 
@@ -93,9 +92,8 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
     _add_ack_and_window();
 
     // end the connection cleanly if necessary.
-    if (_linger_after_streams_finish && 
-        _time_since_last_segment_received >= 10 * _cfg.rt_timeout && 
-        TCPState::state_summary(_sender) == TCPSenderStateSummary::FIN_ACKED && 
+    if (_linger_after_streams_finish && _time_since_last_segment_received >= 10 * _cfg.rt_timeout &&
+        TCPState::state_summary(_sender) == TCPSenderStateSummary::FIN_ACKED &&
         TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV) {
         _active = false;
         _linger_after_streams_finish = false;
@@ -139,7 +137,8 @@ void TCPConnection::_add_ack_and_window() {
         if (_receiver.ackno().has_value()) {
             seg.header().ack = true;
             seg.header().ackno = _receiver.ackno().value();
-            seg.header().win = std::min(std::numeric_limits<uint16_t>::max(), static_cast<uint16_t>(_receiver.window_size()));
+            seg.header().win =
+                std::min(std::numeric_limits<uint16_t>::max(), static_cast<uint16_t>(_receiver.window_size()));
         }
         _segments_out.emplace(std::move(seg));
     }
