@@ -14,14 +14,18 @@
 // You will need to add private members to the class declaration in `network_interface.hh`
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
 //! \param[in] ethernet_address Ethernet (what ARP calls "hardware") address of the interface
 //! \param[in] ip_address IP (what ARP calls "protocol") address of the interface
 NetworkInterface::NetworkInterface(const EthernetAddress &ethernet_address, const Address &ip_address)
-    : _ethernet_address(ethernet_address), _ip_address(ip_address), _arp_table({}), _arp_request_ip_ttl({}), _arp_request_ip_datagram({}) {
+    : _ethernet_address(ethernet_address)
+    , _ip_address(ip_address)
+    , _arp_table({})
+    , _arp_request_ip_ttl({})
+    , _arp_request_ip_datagram({}) {
     cerr << "DEBUG: Network interface has Ethernet address " << to_string(_ethernet_address) << " and IP address "
          << ip_address.ip() << "\n";
 }
@@ -60,7 +64,6 @@ void NetworkInterface::send_datagram(const InternetDatagram &dgram, const Addres
         // record the ip datagram, notice one ip may has many datagram sent to.
         _arp_request_ip_datagram[next_hop_ip].emplace_back(next_hop, dgram);
     }
-    
 }
 
 //! \param[in] frame the incoming Ethernet frame
@@ -90,15 +93,20 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
                 arp_reply.sender_ip_address = my_ip;
                 arp_reply.target_ethernet_address = arp_message.sender_ethernet_address;
                 arp_reply.target_ip_address = arp_src_ip;
-                _send(arp_message.sender_ethernet_address, EthernetHeader::TYPE_ARP, BufferList(std::move(arp_reply.serialize())));
+                _send(arp_message.sender_ethernet_address,
+                      EthernetHeader::TYPE_ARP,
+                      BufferList(std::move(arp_reply.serialize())));
             }
             // learned from the ARP request both for me or not for me because it broadcast.
             _arp_table[arp_src_ip] = {arp_message.sender_ethernet_address, ARP_ENTRY_TTL_MAX};
-            // now it has updated the ARP table, so if the ip has datagram that wait in the queue, then you should send it.
+            // now it has updated the ARP table, so if the ip has datagram that wait in the queue, then you should send
+            // it.
             auto it = _arp_request_ip_datagram.find(arp_src_ip);
             if (it != _arp_request_ip_datagram.end()) {
                 for (const auto &[next_hop, dgram] : it->second) {
-                    _send(arp_message.sender_ethernet_address, EthernetHeader::TYPE_IPv4, BufferList(std::move(dgram.serialize())));
+                    _send(arp_message.sender_ethernet_address,
+                          EthernetHeader::TYPE_IPv4,
+                          BufferList(std::move(dgram.serialize())));
                 }
                 _arp_request_ip_datagram.erase(it);
             }
@@ -117,7 +125,10 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void NetworkInterface::tick(const size_t ms_since_last_tick) {
     // handle the expired ARP table entry
-    for (auto it = _arp_table.begin(); it != _arp_table.end(); ) {
+    // notice after learning cs106L, you should know that when we iterate the container
+    // and delete some iterators, you should do by the following way, i.e "it = _arp_table.erase(it)"
+    // not only "_arp_table.erase(it)", otherwise you may get some weird things.
+    for (auto it = _arp_table.begin(); it != _arp_table.end();) {
         if (it->second.ttl <= ms_since_last_tick) {
             it = _arp_table.erase(it);
         } else {

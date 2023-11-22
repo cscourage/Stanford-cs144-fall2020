@@ -5,10 +5,10 @@
 #include "tcp_over_ip.hh"
 #include "tun.hh"
 
+#include <deque>
 #include <optional>
 #include <queue>
 #include <unordered_map>
-#include <deque>
 
 //! \brief A "network interface" that connects IP (the internet layer, or network layer)
 //! with Ethernet (the network access layer, or link layer).
@@ -43,12 +43,12 @@ class NetworkInterface {
     std::queue<EthernetFrame> _frames_out{};
 
     struct ARP_Entry {
-      EthernetAddress mac;
-      size_t ttl;
+        EthernetAddress mac;
+        size_t ttl;
     };
 
     //! The ARP table, using the unordered_map data structure for the key is uint32_t IP and the value is ARP_Entry struct.
-    //! You may think of using std::set<std::tuple<uint32_t, EthernetAddress, size_t>> or std::unordered_set, but you need 
+    //! You may think of using std::set<std::tuple<uint32_t, EthernetAddress, size_t>> or std::unordered_set, but you need
     //! to reload the less or hash operator and you need to use "get<2>..." to change the TTL, that is a little troublemsome.
     std::unordered_map<uint32_t, ARP_Entry> _arp_table;
 
@@ -86,7 +86,7 @@ class NetworkInterface {
 
     //! The maximum time an ARP entry occupy in the ARP table.
     static constexpr size_t ARP_ENTRY_TTL_MAX = 30 * 1000;
-    
+
     //! The time when an ARP request is sent until time out.
     static constexpr size_t ARP_REQUEST_WAIT_TIME = 5 * 1000;
 };
