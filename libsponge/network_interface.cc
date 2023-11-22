@@ -44,7 +44,7 @@ void NetworkInterface::send_datagram(const InternetDatagram &dgram, const Addres
     auto it = _arp_table.find(next_hop_ip);
     // if the ARP table has relative entry.
     if (it != _arp_table.end()) {
-        _send(it->second.mac, EthernetHeader::TYPE_IPv4, dgram.payload());
+        _send(it->second.mac, EthernetHeader::TYPE_IPv4, BufferList(std::move(dgram.serialize())));
     } else {
         // if ARP don't hit and in the last 5 seconds there is no request for the next_hop_ip.
         if (_arp_request_ip_ttl.find(next_hop_ip) == _arp_request_ip_ttl.end()) {
@@ -93,7 +93,7 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
                 _send(arp_message.sender_ethernet_address, EthernetHeader::TYPE_ARP, BufferList(std::move(arp_reply.serialize())));
             }
             // learned from the ARP request both for me or not for me because it broadcast.
-            _arp_table[arp_src_ip] = {arp_message.sender_ethernet_address, ARP_REQUEST_WAIT_TIME};
+            _arp_table[arp_src_ip] = {arp_message.sender_ethernet_address, ARP_ENTRY_TTL_MAX};
             // now it has updated the ARP table, so if the ip has datagram that wait in the queue, then you should send it.
             auto it = _arp_request_ip_datagram.find(arp_src_ip);
             if (it != _arp_request_ip_datagram.end()) {
