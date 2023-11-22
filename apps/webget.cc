@@ -19,7 +19,7 @@ void get_URL(const string &host, const string &path) {
     // the "eof" (end of file).
 
     //TCPSocket socket1;
-    CS144TCPSocket socket1;
+    FullStackSocket socket1;
     socket1.connect(Address(host, "http"));
     string content = "GET " + path + " HTTP/1.1\r\nHost: " + host + "\r\nConnection: close\r\n\r\n";
     socket1.write(content);
