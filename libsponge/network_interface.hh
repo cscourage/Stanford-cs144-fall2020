@@ -7,6 +7,8 @@
 
 #include <optional>
 #include <queue>
+#include <unordered_map>
+#include <deque>
 
 //! \brief A "network interface" that connects IP (the internet layer, or network layer)
 //! with Ethernet (the network access layer, or link layer).
@@ -40,6 +42,25 @@ class NetworkInterface {
     //! outbound queue of Ethernet frames that the NetworkInterface wants sent
     std::queue<EthernetFrame> _frames_out{};
 
+    struct ARP_Entry {
+      EthernetAddress mac;
+      size_t ttl;
+    };
+
+    //! The ARP table, using the unordered_map data structure for the key is uint32_t IP and the value is ARP_Entry struct.
+    //! You may think of using std::set<std::tuple<uint32_t, EthernetAddress, size_t>> or std::unordered_set, but you need 
+    //! to reload the less or hash operator and you need to use "get<2>..." to change the TTL, that is a little troublemsome.
+    std::unordered_map<uint32_t, ARP_Entry> _arp_table;
+
+    //! The datastructure for ip and its ttl(don't exceed the timeout) that need to send ARP request and wait for ARP reply.
+    std::unordered_map<uint32_t, size_t> _arp_request_ip_ttl;
+
+    //! The datastructure for ip and pair of Address and InternetDatagram that need to wait for ARP reply and then send.
+    std::unordered_map<uint32_t, std::deque<std::pair<Address, InternetDatagram>>> _arp_request_ip_datagram;
+
+    //! pack the frame header and its payload and finally send it.
+    void _send(const EthernetAddress &dst, const uint16_t type, const BufferList &payload);
+
   public:
     //! \brief Construct a network interface with given Ethernet (network-access-layer) and IP (internet-layer) addresses
     NetworkInterface(const EthernetAddress &ethernet_address, const Address &ip_address);
@@ -62,6 +83,12 @@ class NetworkInterface {
 
     //! \brief Called periodically when time elapses
     void tick(const size_t ms_since_last_tick);
+
+    //! The maximum time an ARP entry occupy in the ARP table.
+    static constexpr size_t ARP_ENTRY_TTL_MAX = 30 * 1000;
+    
+    //! The time when an ARP request is sent until time out.
+    static constexpr size_t ARP_REQUEST_WAIT_TIME = 5 * 1000;
 };
 
 #endif  // SPONGE_LIBSPONGE_NETWORK_INTERFACE_HH
