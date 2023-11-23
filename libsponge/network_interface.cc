@@ -97,10 +97,9 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
                       EthernetHeader::TYPE_ARP,
                       BufferList(std::move(arp_reply.serialize())));
             }
-            // learned from the ARP request both for me or not for me because it broadcast.
+            // learned from the ARP request both for me or not for me because it broadcast or may this is an ARP Reply.
             _arp_table[arp_src_ip] = {arp_message.sender_ethernet_address, ARP_ENTRY_TTL_MAX};
-            // now it has updated the ARP table, so if the ip has datagram that wait in the queue, then you should send
-            // it.
+            // now it has updated the ARP table, so if the ip has datagram that wait in the queue, then you should send it.
             auto it = _arp_request_ip_datagram.find(arp_src_ip);
             if (it != _arp_request_ip_datagram.end()) {
                 for (const auto &[next_hop, dgram] : it->second) {
