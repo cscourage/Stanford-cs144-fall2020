@@ -29,14 +29,36 @@ void Router::add_route(const uint32_t route_prefix,
     cerr << "DEBUG: adding route " << Address::from_ipv4_numeric(route_prefix).ip() << "/" << int(prefix_length)
          << " => " << (next_hop.has_value() ? next_hop->ip() : "(direct)") << " on interface " << interface_num << "\n";
 
-    DUMMY_CODE(route_prefix, prefix_length, next_hop, interface_num);
     // Your code here.
+    _route_table.emplace_back(Route_Entry{route_prefix, prefix_length, next_hop, interface_num});
 }
 
 //! \param[in] dgram The datagram to be routed
 void Router::route_one_datagram(InternetDatagram &dgram) {
-    DUMMY_CODE(dgram);
     // Your code here.
+    uint32_t ip = dgram.header().dst;
+    auto best_match = _route_table.end();
+    for (auto it = _route_table.begin(); it != _route_table.end(); ++it) {
+        // if the prefix_length has 32 bits, so we should uniquely handle it.
+        if (it->prefix_length == 32 && (it->route_prefix ^ ip) == 0) {
+            best_match = it;
+            break;
+        } else if (it->prefix_length == 0 || (it->route_prefix ^ ip) >> (32 - it->prefix_length) == 0) {
+            if (best_match == _route_table.end() || it->prefix_length > best_match->prefix_length) {
+                best_match = it;
+            }
+        }
+    }
+    // After having found the best match, you should send it correctly.
+    if (best_match != _route_table.end() && dgram.header().ttl > 1) {
+        --dgram.header().ttl;
+        if (best_match->next_hop.has_value()) {
+            interface(best_match->interface_num).send_datagram(dgram, best_match->next_hop.value());
+        } else {
+            interface(best_match->interface_num).send_datagram(dgram, Address::from_ipv4_numeric(ip));
+        }
+    }
+    // If no routes matched, the router drops the datagram.
 }
 
 void Router::route() {
