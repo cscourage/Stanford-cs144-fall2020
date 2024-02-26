@@ -1,4 +1,4 @@
-# Standford-cs144-fall2020
+# Stanford-cs144-fall2020
 cs144-fall2020
 
 ## Sponge
